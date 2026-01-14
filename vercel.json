@@ -3,32 +3,24 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "env": [
-    {
-      "key": "SESSION_SECRET",
+  "env": {
+    "SESSION_SECRET": {
       "description": "Secret key for session encryption (minimum 32 characters)",
-      "type": "sensitive",
-      "value": ""
+      "required": true
     },
-    {
-      "key": "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_URL": {
       "description": "Supabase project URL",
-      "type": "string",
-      "value": ""
+      "required": true
     },
-    {
-      "key": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": {
       "description": "Supabase anonymous API key",
-      "type": "sensitive",
-      "value": ""
+      "required": true
     },
-    {
-      "key": "DATABASE_URL",
+    "DATABASE_URL": {
       "description": "PostgreSQL connection string (Supabase Connection Pooler)",
-      "type": "sensitive",
-      "value": ""
+      "required": true
     }
-  ],
+  },
   "git": {
     "deploymentEnabled": {
       "main": true
