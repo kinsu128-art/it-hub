@@ -46,7 +46,8 @@
       "Bash(find:*)",
       "Bash(git commit:*)",
       "Bash(npm run build:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(node scripts/seed-servers.js:*)"
     ]
   }
 }
