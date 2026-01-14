@@ -27,23 +27,24 @@ export async function POST(request: NextRequest) {
     const base64Image = Buffer.from(buffer).toString('base64');
     const mimeType = imageFile.type || 'image/jpeg';
 
-    // DeepSeek API 호출
-    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-    if (!deepseekApiKey) {
+    // OpenRouter API 호출
+    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+    if (!openRouterApiKey) {
       return NextResponse.json(
-        { success: false, error: 'DeepSeek API 키가 설정되지 않았습니다.' },
+        { success: false, error: 'OpenRouter API 키가 설정되지 않았습니다.' },
         { status: 500 }
       );
     }
 
-    const deepseekResponse = await fetch('https://api.deepseek.com/chat/completions', {
+    const openRouterResponse = await fetch('https://api.openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${deepseekApiKey}`,
+        'Authorization': `Bearer ${openRouterApiKey}`,
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
       },
       body: JSON.stringify({
-        model: 'deepseek-vision',
+        model: 'deepseek/deepseek-chat',
         messages: [
           {
             role: 'user',
@@ -74,17 +75,17 @@ export async function POST(request: NextRequest) {
       }),
     });
 
-    if (!deepseekResponse.ok) {
-      const errorData = await deepseekResponse.json();
-      console.error('DeepSeek API error:', errorData);
+    if (!openRouterResponse.ok) {
+      const errorData = await openRouterResponse.json();
+      console.error('OpenRouter API error:', errorData);
       return NextResponse.json(
         { success: false, error: 'AI 분석 중 오류가 발생했습니다.' },
         { status: 500 }
       );
     }
 
-    const deepseekData = await deepseekResponse.json();
-    const responseText = deepseekData.choices?.[0]?.message?.content;
+    const openRouterData = await openRouterResponse.json();
+    const responseText = openRouterData.choices?.[0]?.message?.content;
 
     if (!responseText) {
       return NextResponse.json(
