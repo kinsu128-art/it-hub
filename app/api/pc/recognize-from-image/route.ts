@@ -22,6 +22,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Image received:', {
+      filename: imageFile.name,
+      size: imageFile.size,
+      type: imageFile.type
+    });
+
     // 이미지를 base64로 변환
     const buffer = await imageFile.arrayBuffer();
     const base64Image = Buffer.from(buffer).toString('base64');
@@ -30,34 +36,39 @@ export async function POST(request: NextRequest) {
     // OpenRouter API 호출
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
     if (!openRouterApiKey) {
+      console.error('OpenRouter API key not found in environment');
       return NextResponse.json(
         { success: false, error: 'OpenRouter API 키가 설정되지 않았습니다.' },
         { status: 500 }
       );
     }
 
-    const openRouterResponse = await fetch('https://api.openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openRouterApiKey}`,
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-      },
-      body: JSON.stringify({
-        model: 'deepseek/deepseek-chat',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${base64Image}`,
+    console.log('API Key check passed, making request to OpenRouter...');
+
+    let openRouterResponse;
+    try {
+      openRouterResponse = await fetch('https://api.openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openRouterApiKey}`,
+          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-chat',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${mimeType};base64,${base64Image}`,
+                  },
                 },
-              },
-              {
-                type: 'text',
-                text: `이 이미지에서 PC 정보를 추출해주세요. JSON 형식으로 다음 정보를 반환하세요:
+                {
+                  type: 'text',
+                  text: `이 이미지에서 PC 정보를 추출해주세요. JSON 형식으로 다음 정보를 반환하세요:
 {
   "model_name": "PC 모델명 (예: Dell XPS 15, ThinkPad X1)",
   "cpu": "CPU 정보 (있으면)",
@@ -67,13 +78,26 @@ export async function POST(request: NextRequest) {
 }
 
 이미지에 라벨이나 스티커가 있으면 거기서 정보를 추출하세요. 없는 정보는 생략해도 됩니다.`,
-              },
-            ],
-          },
-        ],
-        max_tokens: 500,
-      }),
-    });
+                },
+              ],
+            },
+          ],
+          max_tokens: 500,
+        }),
+      });
+
+      console.log('OpenRouter response received:', {
+        status: openRouterResponse.status,
+        statusText: openRouterResponse.statusText,
+        ok: openRouterResponse.ok
+      });
+    } catch (fetchError) {
+      console.error('Fetch error occurred:', {
+        name: fetchError instanceof Error ? fetchError.name : 'Unknown',
+        message: fetchError instanceof Error ? fetchError.message : String(fetchError)
+      });
+      throw fetchError;
+    }
 
     if (!openRouterResponse.ok) {
       let errorData;
