@@ -77,22 +77,22 @@ export default function PcListPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h2 className="text-2xl font-bold text-gray-900">PC/노트북 관리</h2>
-        <Link href="/pc/new">
-          <Button>+ 새 PC 등록</Button>
+        <Link href="/pc/new" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto">+ 새 PC 등록</Button>
         </Link>
       </div>
 
       {/* 검색 및 필터 */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <form onSubmit={handleSearch} className="flex gap-4">
+        <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row sm:gap-4">
           <input
             type="text"
             placeholder="자산번호, 모델명, 사용자명, 시리얼 검색..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
           <select
             value={statusFilter}
@@ -100,7 +100,7 @@ export default function PcListPage() {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           >
             <option value="">전체 상태</option>
             <option value="assigned">지급</option>
@@ -108,7 +108,7 @@ export default function PcListPage() {
             <option value="repair">수리중</option>
             <option value="disposed">폐기</option>
           </select>
-          <Button type="submit">검색</Button>
+          <Button type="submit" className="w-full sm:w-auto">검색</Button>
         </form>
       </div>
 
@@ -187,22 +187,22 @@ export default function PcListPage() {
                           {PC_STATUS[pc.status]}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-3 sm:px-6 py-4 whitespace-normal sm:whitespace-nowrap text-right text-xs sm:text-sm font-medium space-y-1 sm:space-y-0">
                         <Link
                           href={`/pc/${pc.id}`}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          className="text-blue-600 hover:text-blue-900 block sm:inline mr-0 sm:mr-3"
                         >
                           상세
                         </Link>
                         <Link
                           href={`/pc/${pc.id}/edit`}
-                          className="text-green-600 hover:text-green-900 mr-3"
+                          className="text-green-600 hover:text-green-900 block sm:inline mr-0 sm:mr-3"
                         >
                           수정
                         </Link>
                         <button
                           onClick={() => handleDelete(pc.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 block sm:inline w-full sm:w-auto text-left sm:text-inherit"
                         >
                           폐기
                         </button>

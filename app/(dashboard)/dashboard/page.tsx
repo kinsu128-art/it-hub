@@ -151,34 +151,34 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">대시보드</h2>
-          <p className="text-sm text-gray-500 mt-1">IT 자산 현황 및 최근 변동사항</p>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">IT 자산 현황 및 최근 변동사항</p>
         </div>
-        <Link href="/reports">
-          <Button>📊 상세 보고서</Button>
+        <Link href="/reports" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto">📊 상세 보고서</Button>
         </Link>
       </div>
 
       {/* Overall Summary */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-4 sm:p-6 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-medium opacity-90">전체 자산 현황</h3>
-            <div className="flex items-baseline gap-4 mt-2">
-              <div>
-                <span className="text-4xl font-bold">{totalAssets}</span>
-                <span className="text-xl ml-2">개</span>
+            <h3 className="text-base sm:text-lg font-medium opacity-90">전체 자산 현황</h3>
+            <div className="flex flex-col sm:flex-row items-baseline gap-2 sm:gap-4 mt-2">
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl sm:text-4xl font-bold">{totalAssets}</span>
+                <span className="text-lg sm:text-xl">개</span>
               </div>
-              <div className="text-sm opacity-90">
+              <div className="text-xs sm:text-sm opacity-90">
                 <span>가동중: </span>
-                <span className="font-semibold text-lg">{totalActive}</span>
+                <span className="font-semibold text-base sm:text-lg">{totalActive}</span>
                 <span> 개</span>
               </div>
             </div>
           </div>
-          <div className="text-6xl opacity-20">📊</div>
+          <div className="text-4xl sm:text-6xl opacity-20">📊</div>
         </div>
       </div>
 
