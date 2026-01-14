@@ -43,6 +43,19 @@ cp .env.example .env.local
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase 익명 API 키
 - `DATABASE_URL`: Supabase PostgreSQL 연결 문자열 (Connection Pooler)
 
+### 데이터베이스 초기화
+
+**중요**: Supabase에서 처음으로 연결할 때는 반드시 데이터베이스를 초기화해야 합니다.
+
+```bash
+npm run db:init
+```
+
+이 명령어는:
+- 모든 데이터베이스 테이블을 생성합니다
+- 기본 관리자 계정을 만듭니다 (admin / admin123)
+- 필요한 인덱스를 생성합니다
+
 ### 개발 서버 실행
 
 ```bash
@@ -55,6 +68,14 @@ npm run dev
 
 - **사용자명**: admin
 - **비밀번호**: admin123
+
+### 데이터베이스 연결 테스트
+
+```bash
+node scripts/test-connection.js
+```
+
+데이터베이스 연결 상태를 확인할 수 있습니다.
 
 ## 기술 스택
 
@@ -116,6 +137,27 @@ GitHub main 브랜치에 푸시하면 Vercel에서 자동으로 배포됩니다.
 npm run build
 npm start
 ```
+
+## 문제 해결
+
+### 대시보드 통계가 보이지 않음
+
+대시보드 통계가 나타나지 않으면 다음을 확인하세요:
+
+1. **데이터베이스 초기화 확인**
+   ```bash
+   npm run db:init
+   ```
+
+2. **데이터베이스 연결 확인**
+   ```bash
+   node scripts/test-connection.js
+   ```
+
+3. **자산 데이터 확인**
+   - 대시보드는 생성된 자산 데이터를 기반으로 통계를 표시합니다
+   - 아직 자산을 등록하지 않았다면 통계는 0으로 표시됩니다
+   - PC, 서버, 프린터 등의 자산을 등록하면 통계가 업데이트됩니다
 
 ## 개발 가이드
 

@@ -29,38 +29,38 @@ export async function GET(request: NextRequest) {
     }
 
     // Get asset counts by type
-    const pcCount = await runQuery<{ total: number; active: number }>(
+    const pcCount = await runQuery<{ total: string | number; active: string | number }>(
       `SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN status IN ('assigned', 'in_stock') THEN 1 ELSE 0 END) as active
+        COALESCE(SUM(CASE WHEN status IN ('assigned', 'in_stock') THEN 1 ELSE 0 END), 0) as active
        FROM pcs`
     );
 
-    const serverCount = await runQuery<{ total: number; active: number }>(
+    const serverCount = await runQuery<{ total: string | number; active: string | number }>(
       `SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active
+        COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) as active
        FROM servers`
     );
 
-    const printerCount = await runQuery<{ total: number; active: number }>(
+    const printerCount = await runQuery<{ total: string | number; active: string | number }>(
       `SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active
+        COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) as active
        FROM printers`
     );
 
-    const networkCount = await runQuery<{ total: number; active: number }>(
+    const networkCount = await runQuery<{ total: string | number; active: string | number }>(
       `SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active
+        COALESCE(SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END), 0) as active
        FROM network_ips`
     );
 
-    const softwareCount = await runQuery<{ total: number; active: number }>(
+    const softwareCount = await runQuery<{ total: string | number; active: string | number }>(
       `SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active
+        COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) as active
        FROM software`
     );
 
@@ -122,15 +122,28 @@ export async function GET(request: NextRequest) {
       params
     );
 
+    // Helper to convert bigint to number
+    const convertToNumber = (val: any) => {
+      if (val === null || val === undefined) return 0;
+      return Number(val);
+    };
+
+    // Convert results to numbers
+    const pcData = pcCount[0] ? { total: convertToNumber(pcCount[0].total), active: convertToNumber(pcCount[0].active) } : { total: 0, active: 0 };
+    const serverData = serverCount[0] ? { total: convertToNumber(serverCount[0].total), active: convertToNumber(serverCount[0].active) } : { total: 0, active: 0 };
+    const printerData = printerCount[0] ? { total: convertToNumber(printerCount[0].total), active: convertToNumber(printerCount[0].active) } : { total: 0, active: 0 };
+    const networkData = networkCount[0] ? { total: convertToNumber(networkCount[0].total), active: convertToNumber(networkCount[0].active) } : { total: 0, active: 0 };
+    const softwareData = softwareCount[0] ? { total: convertToNumber(softwareCount[0].total), active: convertToNumber(softwareCount[0].active) } : { total: 0, active: 0 };
+
     return NextResponse.json({
       success: true,
       data: {
         summary: {
-          pc: pcCount[0] || { total: 0, active: 0 },
-          server: serverCount[0] || { total: 0, active: 0 },
-          printer: printerCount[0] || { total: 0, active: 0 },
-          network: networkCount[0] || { total: 0, active: 0 },
-          software: softwareCount[0] || { total: 0, active: 0 },
+          pc: pcData,
+          server: serverData,
+          printer: printerData,
+          network: networkData,
+          software: softwareData,
         },
         statusDistribution: {
           pc: pcByStatus,

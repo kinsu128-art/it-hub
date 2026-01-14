@@ -45,69 +45,53 @@ export default function DashboardPage() {
   }, []);
 
   const fetchDashboardData = async () => {
+    const defaultData = {
+      summary: {
+        pc: { total: 0, active: 0 },
+        server: { total: 0, active: 0 },
+        printer: { total: 0, active: 0 },
+        network: { total: 0, active: 0 },
+        software: { total: 0, active: 0 },
+      },
+      statusDistribution: {
+        pc: [],
+        server: [],
+        printer: [],
+      },
+      changes: {
+        history: [],
+        byAction: [],
+        byAssetType: [],
+        daily: [],
+      },
+      period: {
+        type: 'week',
+        startDate: 'Last 7 days',
+        endDate: 'Now',
+      },
+    };
+
     try {
       setLoading(true);
       const response = await fetch('/api/reports?period=week');
+
+      if (!response.ok) {
+        console.error('API response status:', response.status);
+        setDashboardData(defaultData);
+        return;
+      }
+
       const data = await response.json();
 
-      if (data.success || data.data) {
+      if (data.success && data.data) {
         setDashboardData(data.data);
       } else {
-        // Set default empty data if API fails
-        setDashboardData({
-          summary: {
-            pc: { total: 0, active: 0 },
-            server: { total: 0, active: 0 },
-            printer: { total: 0, active: 0 },
-            network: { total: 0, active: 0 },
-            software: { total: 0, active: 0 },
-          },
-          statusDistribution: {
-            pc: [],
-            server: [],
-            printer: [],
-          },
-          changes: {
-            history: [],
-            byAction: [],
-            byAssetType: [],
-            daily: [],
-          },
-          period: {
-            type: 'week',
-            startDate: 'Last 7 days',
-            endDate: 'Now',
-          },
-        });
+        console.warn('Unexpected API response:', data);
+        setDashboardData(defaultData);
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
-      // Set default empty data on error
-      setDashboardData({
-        summary: {
-          pc: { total: 0, active: 0 },
-          server: { total: 0, active: 0 },
-          printer: { total: 0, active: 0 },
-          network: { total: 0, active: 0 },
-          software: { total: 0, active: 0 },
-        },
-        statusDistribution: {
-          pc: [],
-          server: [],
-          printer: [],
-        },
-        changes: {
-          history: [],
-          byAction: [],
-          byAssetType: [],
-          daily: [],
-        },
-        period: {
-          type: 'week',
-          startDate: 'Last 7 days',
-          endDate: 'Now',
-        },
-      });
+      setDashboardData(defaultData);
     } finally {
       setLoading(false);
     }
