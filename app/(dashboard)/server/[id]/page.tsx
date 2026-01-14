@@ -12,15 +12,8 @@ async function getServer(id: string) {
 
     if (!server) return null;
 
-    // Convert all Date fields to string
-    const serializedServer = {
-      ...server,
-      created_at: typeof (server.created_at as any)?.toISOString === 'function' ? (server.created_at as any).toISOString() : server.created_at,
-      updated_at: typeof (server.updated_at as any)?.toISOString === 'function' ? (server.updated_at as any).toISOString() : server.updated_at,
-    };
-
     // Get history
-    const history = await runQuery(
+    const historyData = await runQuery(
       `SELECT h.*, u.name as changed_by_name
        FROM asset_history h
        LEFT JOIN users u ON h.changed_by = u.id
@@ -30,7 +23,21 @@ async function getServer(id: string) {
       [id]
     );
 
-    return { data: serializedServer, history };
+    // Fully serialize everything through JSON to remove all Date objects
+    const result = JSON.parse(JSON.stringify({
+      data: server,
+      history: historyData || [],
+    }));
+
+    // Format dates after JSON serialization
+    const formattedHistory = (result.history || []).map((item: any) => ({
+      ...item,
+      changed_at: item.changed_at
+        ? new Date(item.changed_at).toLocaleString('ko-KR')
+        : '',
+    }));
+
+    return { data: result.data, history: formattedHistory };
   } catch (error) {
     console.error('Failed to fetch server:', error);
     return null;
@@ -45,10 +52,7 @@ export default async function ServerDetailPage({ params }: { params: { id: strin
   }
 
   const server: Server = result.data;
-  const history = (result.history || []).map((item: any) => ({
-    ...item,
-    changed_at: item.changed_at ? new Date(item.changed_at).toLocaleString('ko-KR') : '',
-  }));
+  const history = result.history || [];
 
   return (
     <div>

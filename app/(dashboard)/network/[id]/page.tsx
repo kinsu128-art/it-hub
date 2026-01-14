@@ -19,7 +19,7 @@ async function getNetworkIp(id: string) {
     };
 
     // Get history
-    const history = await runQuery(
+    const historyData = await runQuery(
       `SELECT h.*, u.name as changed_by_name
        FROM asset_history h
        LEFT JOIN users u ON h.changed_by = u.id
@@ -29,7 +29,21 @@ async function getNetworkIp(id: string) {
       [id]
     );
 
-    return { data: serializedIp, history };
+    // Fully serialize everything through JSON to remove all Date objects
+    const result = JSON.parse(JSON.stringify({
+      data: serializedIp,
+      history: historyData || [],
+    }));
+
+    // Format dates after JSON serialization
+    const formattedHistory = (result.history || []).map((item: any) => ({
+      ...item,
+      changed_at: item.changed_at
+        ? new Date(item.changed_at).toLocaleString('ko-KR')
+        : '',
+    }));
+
+    return { data: result.data, history: formattedHistory };
   } catch (error) {
     console.error('Failed to fetch network IP:', error);
     return null;
@@ -44,10 +58,7 @@ export default async function NetworkDetailPage({ params }: { params: { id: stri
   }
 
   const ip: NetworkIp = result.data;
-  const history = (result.history || []).map((item: any) => ({
-    ...item,
-    changed_at: item.changed_at ? new Date(item.changed_at).toLocaleString('ko-KR') : '',
-  }));
+  const history = result.history || [];
 
   return (
     <div>

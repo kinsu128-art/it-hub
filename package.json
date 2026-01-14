@@ -9,7 +9,9 @@
     "lint": "next lint",
     "db:init": "node scripts/init-db.js",
     "db:seed:servers": "node scripts/seed-servers.js",
-    "db:seed:software": "node scripts/seed-software.js"
+    "db:seed:software": "node scripts/seed-software.js",
+    "db:seed:network": "node scripts/seed-network.js",
+    "db:seed:printers": "node scripts/seed-printers.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",

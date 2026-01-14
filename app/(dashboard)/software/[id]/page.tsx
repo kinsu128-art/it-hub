@@ -22,7 +22,7 @@ async function getSoftware(id: string) {
     };
 
     // Get history
-    const history = await runQuery(
+    const historyData = await runQuery(
       `SELECT h.*, u.name as changed_by_name
        FROM asset_history h
        LEFT JOIN users u ON h.changed_by = u.id
@@ -32,7 +32,21 @@ async function getSoftware(id: string) {
       [id]
     );
 
-    return { data: serializedSoftware, history };
+    // Fully serialize everything through JSON to remove all Date objects
+    const result = JSON.parse(JSON.stringify({
+      data: serializedSoftware,
+      history: historyData || [],
+    }));
+
+    // Format dates after JSON serialization
+    const formattedHistory = (result.history || []).map((item: any) => ({
+      ...item,
+      changed_at: item.changed_at
+        ? new Date(item.changed_at).toLocaleString('ko-KR')
+        : '',
+    }));
+
+    return { data: result.data, history: formattedHistory };
   } catch (error) {
     console.error('Failed to fetch software:', error);
     return null;
@@ -47,10 +61,7 @@ export default async function SoftwareDetailPage({ params }: { params: { id: str
   }
 
   const software: Software = result.data;
-  const history = (result.history || []).map((item: any) => ({
-    ...item,
-    changed_at: item.changed_at ? new Date(item.changed_at).toLocaleString('ko-KR') : '',
-  }));
+  const history = result.history || [];
 
   const availableQuantity = software.purchased_quantity - software.allocated_quantity;
   const usagePercent = (software.allocated_quantity / software.purchased_quantity) * 100;
