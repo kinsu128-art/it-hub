@@ -38,7 +38,10 @@
       "Bash(npm run db:init:*)",
       "Bash(set NODE_TLS_REJECT_UNAUTHORIZED=0)",
       "mcp__supabase__apply_migration",
-      "mcp__playwright__browser_console_messages"
+      "mcp__playwright__browser_console_messages",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Migrate database from SQLite to Supabase PostgreSQL\n\n- Replace sql.js with pg \\(PostgreSQL client\\) for Supabase connection\n- Update database initialization script \\(init-db.js\\) for PostgreSQL\n- Add SSL configuration for Supabase connection pooler\n- Implement graceful API error handling to show dashboard with empty data\n- Update dashboard page to handle API failures gracefully\n- Add test-connection.js script for verifying Supabase connectivity\n- Update package.json dependencies\n\nDatabase is now fully connected to Supabase PostgreSQL with proper error handling.\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(vercel deploy:*)",
+      "mcp__playwright__browser_snapshot"
     ]
   }
 }
