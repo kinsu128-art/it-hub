@@ -39,7 +39,10 @@ export default async function SoftwareDetailPage({ params }: { params: { id: str
   }
 
   const software: Software = result.data;
-  const history = result.history || [];
+  const history = (result.history || []).map((item: any) => ({
+    ...item,
+    changed_at: item.changed_at ? new Date(item.changed_at).toLocaleString('ko-KR') : '',
+  }));
 
   const availableQuantity = software.purchased_quantity - software.allocated_quantity;
   const usagePercent = (software.allocated_quantity / software.purchased_quantity) * 100;
@@ -206,7 +209,7 @@ export default async function SoftwareDetailPage({ params }: { params: { id: str
                     </div>
                     <div className="text-xs text-gray-500">
                       <p>{item.changed_by_name || '알 수 없음'}</p>
-                      <p>{new Date(item.changed_at).toLocaleString('ko-KR')}</p>
+                      <p>{item.changed_at}</p>
                     </div>
                   </div>
                 </div>

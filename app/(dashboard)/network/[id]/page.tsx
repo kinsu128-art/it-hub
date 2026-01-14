@@ -37,7 +37,10 @@ export default async function NetworkDetailPage({ params }: { params: { id: stri
   }
 
   const ip: NetworkIp = result.data;
-  const history = result.history || [];
+  const history = (result.history || []).map((item: any) => ({
+    ...item,
+    changed_at: item.changed_at ? new Date(item.changed_at).toLocaleString('ko-KR') : '',
+  }));
 
   return (
     <div>
@@ -128,7 +131,7 @@ export default async function NetworkDetailPage({ params }: { params: { id: stri
                     </div>
                     <div className="text-xs text-gray-500">
                       <p>{item.changed_by_name || '알 수 없음'}</p>
-                      <p>{new Date(item.changed_at).toLocaleString('ko-KR')}</p>
+                      <p>{item.changed_at}</p>
                     </div>
                   </div>
                 </div>
