@@ -21,7 +21,11 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: IT-Hub - 전산실 통합 IT 인프라 관리 시스템\n\nfeat: Next.js 14 기반 IT 자산 관리 애플리케이션\n- PC/노트북, 서버, 네트워크 IP, 프린터, 소프트웨어 관리\n- SQLite \\(sql.js\\) 데이터베이스\n- 완전한 CRUD 기능 및 변경 이력 추적\n- 인증 시스템 \\(iron-session\\)\n- 대시보드 및 보고서 기능\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__get_publishable_keys",
+      "Bash(npm install:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Migrate database from SQLite to Supabase PostgreSQL\n\n- Replace sql.js with postgres package for Supabase connection\n- Update database layer \\(lib/db/index.ts\\) to use postgres client\n- Convert SQL placeholder syntax from ? to $1, $2, etc for PostgreSQL\n- Add proper parameter binding and error handling\n- Update environment variables for Supabase connection\n- Create SUPABASE_SETUP.md with setup instructions\n- Update CLAUDE.md to reflect Supabase architecture\n- Install @supabase/supabase-js and postgres packages\n\nThis migration enables:\n- Cloud-hosted PostgreSQL database with Supabase\n- Proper transaction support via postgres client\n- Connection pooling for better performance\n- Production-ready database infrastructure\n- Better scalability for multiple concurrent users\n\nDatabase schema was pre-created in Supabase project: sapzbrueaipnbbazsvcl\nUsers need to:\n1. Update DATABASE_URL in .env.local with their Supabase password\n2. Run ''npm run db:init'' to create default admin user\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

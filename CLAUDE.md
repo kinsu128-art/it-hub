@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 **IT-Hub** - 전산실 통합 IT 인프라 관리 시스템
-Next.js 14 (App Router) + SQLite (sql.js) 기반 IT 자산 관리 애플리케이션
+Next.js 14 (App Router) + Supabase PostgreSQL 기반 IT 자산 관리 애플리케이션
 
 ## Commands
 
@@ -30,7 +30,8 @@ npm run db:init      # Initialize database (creates tables and admin user)
 
 ### Tech Stack
 - **Frontend**: Next.js 14, React 18, Tailwind CSS
-- **Database**: SQLite (sql.js - WebAssembly based, no native build tools required)
+- **Database**: Supabase PostgreSQL (cloud-hosted, production-ready)
+- **Database Client**: postgres package for direct SQL queries
 - **Authentication**: iron-session (cookie-based sessions)
 - **State**: React hooks (no external state management)
 - **Charts**: Recharts (planned for dashboard)

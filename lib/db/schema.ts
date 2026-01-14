@@ -1,153 +1,65 @@
-import { getDb } from './index';
+/**
+ * Database Schema Documentation
+ *
+ * This application now uses Supabase PostgreSQL instead of SQLite.
+ * The database schema has been migrated to Supabase.
+ *
+ * To set up the database:
+ * 1. The schema is already created in Supabase (migration: initial_schema)
+ * 2. Get your database password from: https://supabase.com/dashboard/project/sapzbrueaipnbbazsvcl/settings/database
+ * 3. Update DATABASE_URL in .env.local with your password
+ * 4. Run the initialization script to create the default admin user
+ *
+ * Database Tables:
+ * - users: User accounts with roles (admin/user/viewer)
+ * - pcs: PC/Laptop assets
+ * - servers: Server assets
+ * - network_ips: IP address management
+ * - printers: Printer assets
+ * - software: Software licenses
+ * - asset_history: Audit log for all asset changes
+ *
+ * For more details, see: https://supabase.com/dashboard/project/sapzbrueaipnbbazsvcl
+ */
+
+import { runQuery, runInsert } from './index';
+import { hashPassword } from '@/lib/auth/password';
 
 export async function initializeDatabase() {
-  const db = await getDb();
-
-  // Users table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      name TEXT NOT NULL,
-      email TEXT,
-      role TEXT DEFAULT 'user' CHECK(role IN ('admin', 'user', 'viewer')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  try {
+    // Check if admin user already exists
+    const existingAdmin = await runQuery(
+      'SELECT id FROM users WHERE username = $1',
+      [process.env.ADMIN_USERNAME || 'admin']
     );
-  `);
 
-  // PC/Laptop assets
-  db.run(`
-    CREATE TABLE IF NOT EXISTS pcs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      asset_number TEXT UNIQUE NOT NULL,
-      user_name TEXT,
-      department TEXT,
-      model_name TEXT NOT NULL,
-      serial_number TEXT UNIQUE,
-      purchase_date DATE,
-      cpu TEXT,
-      ram TEXT,
-      disk TEXT,
-      status TEXT DEFAULT 'in_stock' CHECK(status IN ('assigned', 'in_stock', 'repair', 'disposed')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id),
-      updated_by INTEGER REFERENCES users(id)
+    if (existingAdmin.length > 0) {
+      console.log('Admin user already exists');
+      return;
+    }
+
+    // Create default admin user
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const hashedPassword = await hashPassword(adminPassword);
+
+    await runInsert(
+      `INSERT INTO users (username, password_hash, name, email, role)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        process.env.ADMIN_USERNAME || 'admin',
+        hashedPassword,
+        'Administrator',
+        'admin@example.com',
+        'admin',
+      ]
     );
-  `);
 
-  // Server assets
-  db.run(`
-    CREATE TABLE IF NOT EXISTS servers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      asset_number TEXT UNIQUE NOT NULL,
-      rack_location TEXT,
-      hostname TEXT NOT NULL,
-      os_version TEXT,
-      ip_address TEXT,
-      purpose TEXT,
-      warranty_expiry DATE,
-      cpu TEXT,
-      ram TEXT,
-      disk TEXT,
-      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'maintenance', 'disposed')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id),
-      updated_by INTEGER REFERENCES users(id)
-    );
-  `);
-
-  // Network IP addresses
-  db.run(`
-    CREATE TABLE IF NOT EXISTS network_ips (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ip_address TEXT UNIQUE NOT NULL,
-      subnet_mask TEXT NOT NULL,
-      gateway TEXT,
-      assigned_device TEXT,
-      vlan_id INTEGER,
-      is_active BOOLEAN DEFAULT 1,
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id),
-      updated_by INTEGER REFERENCES users(id)
-    );
-  `);
-
-  // Printers
-  db.run(`
-    CREATE TABLE IF NOT EXISTS printers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      asset_number TEXT UNIQUE NOT NULL,
-      model_name TEXT NOT NULL,
-      ip_address TEXT,
-      location TEXT,
-      toner_status TEXT,
-      drum_status TEXT,
-      vendor_name TEXT,
-      vendor_contact TEXT,
-      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'repair', 'disposed')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id),
-      updated_by INTEGER REFERENCES users(id)
-    );
-  `);
-
-  // Software licenses
-  db.run(`
-    CREATE TABLE IF NOT EXISTS software (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      software_name TEXT NOT NULL,
-      license_key TEXT,
-      purchased_quantity INTEGER NOT NULL,
-      allocated_quantity INTEGER DEFAULT 0,
-      expiry_date DATE,
-      version TEXT,
-      vendor_name TEXT,
-      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'expired', 'disposed')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id),
-      updated_by INTEGER REFERENCES users(id),
-      CONSTRAINT check_allocation CHECK (allocated_quantity <= purchased_quantity)
-    );
-  `);
-
-  // Asset history (audit log)
-  db.run(`
-    CREATE TABLE IF NOT EXISTS asset_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      asset_type TEXT NOT NULL CHECK(asset_type IN ('pc', 'server', 'network', 'printer', 'software')),
-      asset_id INTEGER NOT NULL,
-      action TEXT NOT NULL CHECK(action IN ('create', 'update', 'delete', 'dispose')),
-      field_name TEXT,
-      old_value TEXT,
-      new_value TEXT,
-      changed_by INTEGER REFERENCES users(id),
-      changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      ip_address TEXT,
-      user_agent TEXT
-    );
-  `);
-
-  // Create indexes for performance
-  db.run(`CREATE INDEX IF NOT EXISTS idx_pcs_status ON pcs(status)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_pcs_asset_number ON pcs(asset_number)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_servers_hostname ON servers(hostname)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_network_ips_ip ON network_ips(ip_address)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_network_ips_active ON network_ips(is_active)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_software_expiry ON software(expiry_date)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_history_asset ON asset_history(asset_type, asset_id)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_history_date ON asset_history(changed_at)`);
-
-  console.log('Database schema initialized successfully');
+    console.log('Database initialized successfully');
+    console.log('Default admin user created');
+    console.log(`Username: ${process.env.ADMIN_USERNAME || 'admin'}`);
+    console.log(`Password: ${adminPassword}`);
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    throw error;
+  }
 }

@@ -1,151 +1,133 @@
-import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
-import path from 'path';
-import fs from 'fs';
+import postgres from 'postgres';
 
-const dbPath = process.env.DATABASE_PATH || './database/ithub.db';
-const dbDir = path.dirname(dbPath);
+const connectionString = process.env.DATABASE_URL || '';
 
-let db: SqlJsDatabase | null = null;
-let SQL: any = null;
+if (!connectionString || connectionString.includes('[YOUR-PASSWORD]')) {
+  console.warn(
+    '\n⚠️  DATABASE_URL is not configured!\n' +
+    'Please update .env.local with your Supabase database password.\n' +
+    'Get it from: https://supabase.com/dashboard/project/sapzbrueaipnbbazsvcl/settings/database\n'
+  );
+}
 
-async function initDatabase(): Promise<SqlJsDatabase> {
-  if (db) return db;
+// Create a postgres connection
+let sql: ReturnType<typeof postgres> | null = null;
 
-  // Ensure database directory exists
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
-
-  // Initialize SQL.js - use local wasm file from node_modules
-  if (!SQL) {
-    const wasmBinary = fs.readFileSync(
-      path.join(process.cwd(), 'node_modules/sql.js/dist/sql-wasm.wasm')
-    );
-
-    SQL = await initSqlJs({
-      wasmBinary: wasmBinary.buffer.slice(
-        wasmBinary.byteOffset,
-        wasmBinary.byteOffset + wasmBinary.byteLength
-      ) as ArrayBuffer,
+function getDb() {
+  if (!sql) {
+    sql = postgres(connectionString, {
+      max: 10, // Connection pool size
+      idle_timeout: 20,
+      connect_timeout: 10,
     });
   }
-
-  // Load existing database or create new one
-  let database: SqlJsDatabase;
-  if (fs.existsSync(dbPath)) {
-    const buffer = fs.readFileSync(dbPath);
-    database = new SQL.Database(buffer);
-  } else {
-    database = new SQL.Database();
-  }
-
-  // Enable foreign keys
-  database.run('PRAGMA foreign_keys = ON');
-
-  db = database;
-  return database;
-}
-
-async function saveDatabase() {
-  if (db) {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
-  }
-}
-
-export async function getDb(): Promise<SqlJsDatabase> {
-  if (!db) {
-    db = await initDatabase();
-  }
-  return db;
+  return sql;
 }
 
 // Helper functions
-export async function runQuery<T = any>(sql: string, params: any[] = []): Promise<T[]> {
-  const database = await getDb();
+export async function runQuery<T = any>(sqlQuery: string, params: any[] = []): Promise<T[]> {
+  const db = getDb();
 
   try {
-    const stmt = database.prepare(sql);
-    if (params.length > 0) {
-      stmt.bind(params);
-    }
+    // Convert ? placeholders to $1, $2, etc. for postgres
+    let paramIndex = 1;
+    const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
 
-    const results: T[] = [];
-    while (stmt.step()) {
-      const row = stmt.getAsObject();
-      results.push(row as T);
-    }
-    stmt.free();
-
-    return results;
+    const results = await db.unsafe(convertedSql, params);
+    return results as T[];
   } catch (error) {
     console.error('Query error:', error);
+    console.error('SQL:', sqlQuery);
+    console.error('Params:', params);
     throw error;
   }
 }
 
-export async function getOne<T = any>(sql: string, params: any[] = []): Promise<T | null> {
-  const results = await runQuery<T>(sql, params);
+export async function getOne<T = any>(sqlQuery: string, params: any[] = []): Promise<T | null> {
+  const results = await runQuery<T>(sqlQuery, params);
   return results[0] || null;
 }
 
-export async function runInsert(sql: string, params: any[] = []): Promise<{ lastID: number; lastInsertRowid: number }> {
-  const database = await getDb();
+export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{ lastID: number; lastInsertRowid: number }> {
+  const db = getDb();
 
   try {
-    database.run(sql, params);
-    await saveDatabase();
+    // Add RETURNING id to get the inserted ID
+    let modifiedSql = sqlQuery.trim();
+    if (!modifiedSql.toLowerCase().includes('returning')) {
+      modifiedSql += ' RETURNING id';
+    }
 
-    const result = database.exec('SELECT last_insert_rowid() as id');
-    const lastId = result[0]?.values[0]?.[0] as number || 0;
+    // Convert ? placeholders to $1, $2, etc.
+    let paramIndex = 1;
+    const convertedSql = modifiedSql.replace(/\?/g, () => `$${paramIndex++}`);
+
+    const results = await db.unsafe(convertedSql, params);
+    const lastId = results[0]?.id || 0;
 
     return { lastID: lastId, lastInsertRowid: lastId };
   } catch (error) {
     console.error('Insert error:', error);
+    console.error('SQL:', sqlQuery);
+    console.error('Params:', params);
     throw error;
   }
 }
 
-export async function runUpdate(sql: string, params: any[] = []): Promise<{ changes: number }> {
-  const database = await getDb();
+export async function runUpdate(sqlQuery: string, params: any[] = []): Promise<{ changes: number }> {
+  const db = getDb();
 
   try {
-    database.run(sql, params);
-    await saveDatabase();
+    // Convert ? placeholders to $1, $2, etc.
+    let paramIndex = 1;
+    const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
 
-    return { changes: 1 };
+    const results = await db.unsafe(convertedSql, params);
+    return { changes: Array.isArray(results) ? results.length : 1 };
   } catch (error) {
     console.error('Update error:', error);
+    console.error('SQL:', sqlQuery);
+    console.error('Params:', params);
     throw error;
   }
 }
 
-export async function runDelete(sql: string, params: any[] = []): Promise<{ changes: number }> {
-  const database = await getDb();
+export async function runDelete(sqlQuery: string, params: any[] = []): Promise<{ changes: number }> {
+  const db = getDb();
 
   try {
-    database.run(sql, params);
-    await saveDatabase();
+    // Convert ? placeholders to $1, $2, etc.
+    let paramIndex = 1;
+    const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
 
-    return { changes: 1 };
+    const results = await db.unsafe(convertedSql, params);
+    return { changes: Array.isArray(results) ? results.length : 1 };
   } catch (error) {
     console.error('Delete error:', error);
+    console.error('SQL:', sqlQuery);
+    console.error('Params:', params);
     throw error;
   }
 }
 
 export async function transaction<T>(callback: () => Promise<T>): Promise<T> {
-  const database = await getDb();
-  database.run('BEGIN TRANSACTION');
+  const db = getDb();
 
   try {
-    const result = await callback();
-    database.run('COMMIT');
-    await saveDatabase();
-    return result;
+    return await db.begin(async (tx) => {
+      // Temporarily replace the global connection with the transaction
+      const originalSql = sql;
+      sql = tx as any;
+
+      try {
+        const result = await callback();
+        return result;
+      } finally {
+        sql = originalSql;
+      }
+    });
   } catch (error) {
-    database.run('ROLLBACK');
+    console.error('Transaction error:', error);
     throw error;
   }
 }
