@@ -6,7 +6,17 @@ import { getOne } from '@/lib/db';
 async function getServer(id: string) {
   try {
     const server = await getOne<Server>('SELECT * FROM servers WHERE id = ?', [id]);
-    return server;
+
+    if (!server) return null;
+
+    // Convert all Date fields to string
+    const serializedServer = {
+      ...server,
+      created_at: typeof (server.created_at as any)?.toISOString === 'function' ? (server.created_at as any).toISOString() : server.created_at,
+      updated_at: typeof (server.updated_at as any)?.toISOString === 'function' ? (server.updated_at as any).toISOString() : server.updated_at,
+    };
+
+    return serializedServer;
   } catch (error) {
     console.error('Failed to fetch server:', error);
     return null;

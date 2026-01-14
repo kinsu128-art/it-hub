@@ -6,7 +6,17 @@ import { getOne } from '@/lib/db';
 async function getPrinter(id: string) {
   try {
     const printer = await getOne<Printer>('SELECT * FROM printers WHERE id = ?', [id]);
-    return printer;
+
+    if (!printer) return null;
+
+    // Convert all Date fields to string
+    const serializedPrinter = {
+      ...printer,
+      created_at: typeof (printer.created_at as any)?.toISOString === 'function' ? (printer.created_at as any).toISOString() : printer.created_at,
+      updated_at: typeof (printer.updated_at as any)?.toISOString === 'function' ? (printer.updated_at as any).toISOString() : printer.updated_at,
+    };
+
+    return serializedPrinter;
   } catch (error) {
     console.error('Failed to fetch printer:', error);
     return null;

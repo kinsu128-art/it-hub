@@ -6,7 +6,17 @@ import { getOne } from '@/lib/db';
 async function getNetworkIp(id: string) {
   try {
     const ip = await getOne<NetworkIp>('SELECT * FROM network_ips WHERE id = ?', [id]);
-    return ip;
+
+    if (!ip) return null;
+
+    // Convert all Date fields to string
+    const serializedIp = {
+      ...ip,
+      created_at: typeof (ip.created_at as any)?.toISOString === 'function' ? (ip.created_at as any).toISOString() : ip.created_at,
+      updated_at: typeof (ip.updated_at as any)?.toISOString === 'function' ? (ip.updated_at as any).toISOString() : ip.updated_at,
+    };
+
+    return serializedIp;
   } catch (error) {
     console.error('Failed to fetch network IP:', error);
     return null;
