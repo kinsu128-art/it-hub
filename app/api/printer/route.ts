@@ -1,0 +1,150 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth/session';
+import { runQuery, runInsert } from '@/lib/db';
+import { recordHistory } from '@/lib/db/history';
+import { Printer } from '@/types';
+
+// GET - 목록 조회
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session.isLoggedIn) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
+    const offset = (page - 1) * limit;
+
+    let whereClause = 'WHERE 1=1';
+    const params: any[] = [];
+
+    if (search) {
+      whereClause += ' AND (asset_number LIKE ? OR model_name LIKE ? OR ip_address LIKE ? OR location LIKE ?)';
+      const searchPattern = `%${search}%`;
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+    }
+
+    if (status) {
+      whereClause += ' AND status = ?';
+      params.push(status);
+    }
+
+    // Get total count
+    const countResult = await runQuery<{ count: number }>(
+      `SELECT COUNT(*) as count FROM printers ${whereClause}`,
+      params
+    );
+    const total = countResult[0]?.count || 0;
+
+    // Get paginated data
+    const printers = await runQuery<Printer>(
+      `SELECT * FROM printers ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: printers,
+      total,
+      page,
+      pageSize: limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error('Printer list error:', error);
+    return NextResponse.json(
+      { error: '목록 조회 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - 생성
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const {
+      asset_number,
+      model_name,
+      ip_address,
+      location,
+      toner_status,
+      drum_status,
+      vendor_name,
+      vendor_contact,
+      status,
+      notes,
+    } = body;
+
+    // Validate required fields
+    if (!asset_number || !model_name) {
+      return NextResponse.json(
+        { error: '자산번호와 모델명은 필수입니다.' },
+        { status: 400 }
+      );
+    }
+
+    // Check for duplicate asset number
+    const existing = await runQuery(
+      'SELECT id FROM printers WHERE asset_number = ?',
+      [asset_number]
+    );
+
+    if (existing.length > 0) {
+      return NextResponse.json(
+        { error: '이미 존재하는 자산번호입니다.' },
+        { status: 400 }
+      );
+    }
+
+    // Insert Printer
+    const result = await runInsert(
+      `INSERT INTO printers (
+        asset_number, model_name, ip_address, location, toner_status,
+        drum_status, vendor_name, vendor_contact, status, notes, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        asset_number,
+        model_name,
+        ip_address || null,
+        location || null,
+        toner_status || null,
+        drum_status || null,
+        vendor_name || null,
+        vendor_contact || null,
+        status || 'active',
+        notes || null,
+        session.user.id,
+        session.user.id,
+      ]
+    );
+
+    // Record history
+    await recordHistory({
+      assetType: 'printer',
+      assetId: result.lastInsertRowid,
+      action: 'create',
+      userId: session.user.id,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: { id: result.lastInsertRowid, ...body },
+    });
+  } catch (error) {
+    console.error('Printer create error:', error);
+    return NextResponse.json(
+      { error: '등록 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
