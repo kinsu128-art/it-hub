@@ -11,6 +11,13 @@ async function getNetworkIp(id: string) {
 
     if (!ip) return null;
 
+    // Convert all Date fields to string
+    const serializedIp = {
+      ...ip,
+      created_at: typeof (ip.created_at as any)?.toISOString === 'function' ? (ip.created_at as any).toISOString() : ip.created_at,
+      updated_at: typeof (ip.updated_at as any)?.toISOString === 'function' ? (ip.updated_at as any).toISOString() : ip.updated_at,
+    };
+
     // Get history
     const history = await runQuery(
       `SELECT h.*, u.name as changed_by_name
@@ -22,7 +29,7 @@ async function getNetworkIp(id: string) {
       [id]
     );
 
-    return { data: ip, history };
+    return { data: serializedIp, history };
   } catch (error) {
     console.error('Failed to fetch network IP:', error);
     return null;

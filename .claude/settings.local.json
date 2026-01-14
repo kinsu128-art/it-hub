@@ -45,7 +45,8 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: Remove env field from vercel.json and rely on dashboard configuration\n\nThe env field in vercel.json was causing schema validation errors. Since environment variables are already configured in the Vercel dashboard \\(SESSION_SECRET, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, DATABASE_URL\\), we can safely remove this field. Vercel will use the dashboard environment variables during the build and runtime.\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(find:*)",
       "Bash(git commit:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(curl:*)"
     ]
   }
 }

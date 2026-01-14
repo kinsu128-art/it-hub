@@ -13,6 +13,14 @@ async function getSoftware(id: string) {
 
     if (!software) return null;
 
+    // Convert all Date fields to string
+    const serializedSoftware = {
+      ...software,
+      created_at: typeof (software.created_at as any)?.toISOString === 'function' ? (software.created_at as any).toISOString() : software.created_at,
+      updated_at: typeof (software.updated_at as any)?.toISOString === 'function' ? (software.updated_at as any).toISOString() : software.updated_at,
+      expiry_date: typeof (software.expiry_date as any)?.toISOString === 'function' ? (software.expiry_date as any).toISOString() : software.expiry_date,
+    };
+
     // Get history
     const history = await runQuery(
       `SELECT h.*, u.name as changed_by_name
@@ -24,7 +32,7 @@ async function getSoftware(id: string) {
       [id]
     );
 
-    return { data: software, history };
+    return { data: serializedSoftware, history };
   } catch (error) {
     console.error('Failed to fetch software:', error);
     return null;

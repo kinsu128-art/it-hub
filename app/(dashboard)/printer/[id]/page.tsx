@@ -12,6 +12,13 @@ async function getPrinter(id: string) {
 
     if (!printer) return null;
 
+    // Convert all Date fields to string
+    const serializedPrinter = {
+      ...printer,
+      created_at: typeof (printer.created_at as any)?.toISOString === 'function' ? (printer.created_at as any).toISOString() : printer.created_at,
+      updated_at: typeof (printer.updated_at as any)?.toISOString === 'function' ? (printer.updated_at as any).toISOString() : printer.updated_at,
+    };
+
     // Get history
     const history = await runQuery(
       `SELECT h.*, u.name as changed_by_name
@@ -23,7 +30,7 @@ async function getPrinter(id: string) {
       [id]
     );
 
-    return { data: printer, history };
+    return { data: serializedPrinter, history };
   } catch (error) {
     console.error('Failed to fetch printer:', error);
     return null;

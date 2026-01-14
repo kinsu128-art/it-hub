@@ -12,6 +12,13 @@ async function getServer(id: string) {
 
     if (!server) return null;
 
+    // Convert all Date fields to string
+    const serializedServer = {
+      ...server,
+      created_at: typeof (server.created_at as any)?.toISOString === 'function' ? (server.created_at as any).toISOString() : server.created_at,
+      updated_at: typeof (server.updated_at as any)?.toISOString === 'function' ? (server.updated_at as any).toISOString() : server.updated_at,
+    };
+
     // Get history
     const history = await runQuery(
       `SELECT h.*, u.name as changed_by_name
@@ -23,7 +30,7 @@ async function getServer(id: string) {
       [id]
     );
 
-    return { data: server, history };
+    return { data: serializedServer, history };
   } catch (error) {
     console.error('Failed to fetch server:', error);
     return null;
