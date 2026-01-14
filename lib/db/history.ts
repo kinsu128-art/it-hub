@@ -24,14 +24,15 @@ export async function recordHistory(params: RecordHistoryParams) {
   } else if (action === 'update' && changes) {
     // Multiple records for each changed field
     const db = await getDb();
+    const client = await db.connect();
 
-    db.run('BEGIN TRANSACTION');
     try {
+      await client.query('BEGIN TRANSACTION');
       for (const change of changes) {
-        db.run(
+        await client.query(
           `INSERT INTO asset_history
            (asset_type, asset_id, action, field_name, old_value, new_value, changed_by, ip_address, user_agent)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [
             assetType,
             assetId,
@@ -45,10 +46,12 @@ export async function recordHistory(params: RecordHistoryParams) {
           ]
         );
       }
-      db.run('COMMIT');
+      await client.query('COMMIT');
     } catch (error) {
-      db.run('ROLLBACK');
+      await client.query('ROLLBACK');
       throw error;
+    } finally {
+      client.release();
     }
   }
 }
