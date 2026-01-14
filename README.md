@@ -29,16 +29,19 @@
 npm install
 ```
 
-### 데이터베이스 초기화
+### 환경 변수 설정
+
+`.env.example`을 `.env.local`로 복사하고 Supabase 자격증명을 입력하세요:
 
 ```bash
-npm run db:init
+cp .env.example .env.local
 ```
 
-이 명령은 다음을 수행합니다:
-- SQLite 데이터베이스 파일 생성 (`database/ithub.db`)
-- 테이블 스키마 생성
-- 기본 관리자 계정 생성 (admin/admin123)
+필수 환경 변수:
+- `SESSION_SECRET`: 세션 암호화 키 (32자 이상의 임의 문자열)
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase 프로젝트 URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase 익명 API 키
+- `DATABASE_URL`: Supabase PostgreSQL 연결 문자열 (Connection Pooler)
 
 ### 개발 서버 실행
 
@@ -58,9 +61,11 @@ npm run dev
 - **프레임워크**: Next.js 14 (App Router)
 - **언어**: TypeScript
 - **스타일링**: Tailwind CSS
-- **데이터베이스**: SQLite (sql.js)
-- **인증**: iron-session
-- **차트**: Recharts (예정)
+- **데이터베이스**: Supabase PostgreSQL
+- **데이터베이스 클라이언트**: pg (PostgreSQL 네이티브 드라이버)
+- **인증**: iron-session (쿠키 기반 세션)
+- **차트**: Recharts
+- **호스팅**: Vercel
 
 ## 프로젝트 구조
 
@@ -88,6 +93,29 @@ npm run dev
 - `GET /api/pc/[id]` - 상세 조회
 - `PUT /api/pc/[id]` - 수정
 - `DELETE /api/pc/[id]` - 폐기
+
+## Vercel 배포
+
+### 배포 전 준비
+
+1. Vercel 계정 생성: [vercel.com](https://vercel.com)
+2. GitHub 저장소 연결
+3. Vercel 환경 변수 설정:
+   - `SESSION_SECRET`: 세션 암호화 키
+   - `NEXT_PUBLIC_SUPABASE_URL`: Supabase URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase 익명 키
+   - `DATABASE_URL`: Supabase 데이터베이스 연결 문자열
+
+### 자동 배포
+
+GitHub main 브랜치에 푸시하면 Vercel에서 자동으로 배포됩니다.
+
+### 수동 배포
+
+```bash
+npm run build
+npm start
+```
 
 ## 개발 가이드
 
