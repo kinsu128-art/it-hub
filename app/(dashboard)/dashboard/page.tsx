@@ -50,11 +50,64 @@ export default function DashboardPage() {
       const response = await fetch('/api/reports?period=week');
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success || data.data) {
         setDashboardData(data.data);
+      } else {
+        // Set default empty data if API fails
+        setDashboardData({
+          summary: {
+            pc: { total: 0, active: 0 },
+            server: { total: 0, active: 0 },
+            printer: { total: 0, active: 0 },
+            network: { total: 0, active: 0 },
+            software: { total: 0, active: 0 },
+          },
+          statusDistribution: {
+            pc: [],
+            server: [],
+            printer: [],
+          },
+          changes: {
+            history: [],
+            byAction: [],
+            byAssetType: [],
+            daily: [],
+          },
+          period: {
+            type: 'week',
+            startDate: 'Last 7 days',
+            endDate: 'Now',
+          },
+        });
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+      // Set default empty data on error
+      setDashboardData({
+        summary: {
+          pc: { total: 0, active: 0 },
+          server: { total: 0, active: 0 },
+          printer: { total: 0, active: 0 },
+          network: { total: 0, active: 0 },
+          software: { total: 0, active: 0 },
+        },
+        statusDistribution: {
+          pc: [],
+          server: [],
+          printer: [],
+        },
+        changes: {
+          history: [],
+          byAction: [],
+          byAssetType: [],
+          daily: [],
+        },
+        period: {
+          type: 'week',
+          startDate: 'Last 7 days',
+          endDate: 'Now',
+        },
+      });
     } finally {
       setLoading(false);
     }

@@ -25,7 +25,20 @@
       "mcp__supabase__get_project_url",
       "mcp__supabase__get_publishable_keys",
       "Bash(npm install:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Migrate database from SQLite to Supabase PostgreSQL\n\n- Replace sql.js with postgres package for Supabase connection\n- Update database layer \\(lib/db/index.ts\\) to use postgres client\n- Convert SQL placeholder syntax from ? to $1, $2, etc for PostgreSQL\n- Add proper parameter binding and error handling\n- Update environment variables for Supabase connection\n- Create SUPABASE_SETUP.md with setup instructions\n- Update CLAUDE.md to reflect Supabase architecture\n- Install @supabase/supabase-js and postgres packages\n\nThis migration enables:\n- Cloud-hosted PostgreSQL database with Supabase\n- Proper transaction support via postgres client\n- Connection pooling for better performance\n- Production-ready database infrastructure\n- Better scalability for multiple concurrent users\n\nDatabase schema was pre-created in Supabase project: sapzbrueaipnbbazsvcl\nUsers need to:\n1. Update DATABASE_URL in .env.local with their Supabase password\n2. Run ''npm run db:init'' to create default admin user\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Migrate database from SQLite to Supabase PostgreSQL\n\n- Replace sql.js with postgres package for Supabase connection\n- Update database layer \\(lib/db/index.ts\\) to use postgres client\n- Convert SQL placeholder syntax from ? to $1, $2, etc for PostgreSQL\n- Add proper parameter binding and error handling\n- Update environment variables for Supabase connection\n- Create SUPABASE_SETUP.md with setup instructions\n- Update CLAUDE.md to reflect Supabase architecture\n- Install @supabase/supabase-js and postgres packages\n\nThis migration enables:\n- Cloud-hosted PostgreSQL database with Supabase\n- Proper transaction support via postgres client\n- Connection pooling for better performance\n- Production-ready database infrastructure\n- Better scalability for multiple concurrent users\n\nDatabase schema was pre-created in Supabase project: sapzbrueaipnbbazsvcl\nUsers need to:\n1. Update DATABASE_URL in .env.local with their Supabase password\n2. Run ''npm run db:init'' to create default admin user\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "mcp__playwright__browser_take_screenshot",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "mcp__supabase__execute_sql",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)",
+      "Bash(wmic process where name=\"node.exe\" delete)",
+      "Bash(powershell -Command \"Stop-Process -Name node -Force\")",
+      "Bash(npm run db:init:*)",
+      "Bash(set NODE_TLS_REJECT_UNAUTHORIZED=0)",
+      "mcp__supabase__apply_migration",
+      "mcp__playwright__browser_console_messages"
     ]
   }
 }

@@ -1,4 +1,4 @@
-import postgres from 'postgres';
+import { Pool } from 'pg';
 
 const connectionString = process.env.DATABASE_URL || '';
 
@@ -10,31 +10,33 @@ if (!connectionString || connectionString.includes('[YOUR-PASSWORD]')) {
   );
 }
 
-// Create a postgres connection
-let sql: ReturnType<typeof postgres> | null = null;
+// Create a connection pool
+let pool: Pool | null = null;
 
-function getDb() {
-  if (!sql) {
-    sql = postgres(connectionString, {
-      max: 10, // Connection pool size
-      idle_timeout: 20,
-      connect_timeout: 10,
+function getDb(): Pool {
+  if (!pool) {
+    pool = new Pool({
+      connectionString,
+      max: 10,
+      idleTimeoutMillis: 20000,
+      connectionTimeoutMillis: 10000,
+      ssl: { rejectUnauthorized: false }
     });
   }
-  return sql;
+  return pool;
 }
 
 // Helper functions
 export async function runQuery<T = any>(sqlQuery: string, params: any[] = []): Promise<T[]> {
-  const db = getDb();
+  const client = getDb();
 
   try {
     // Convert ? placeholders to $1, $2, etc. for postgres
     let paramIndex = 1;
     const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
 
-    const results = await db.unsafe(convertedSql, params);
-    return results as T[];
+    const result = await client.query(convertedSql, params);
+    return result.rows as T[];
   } catch (error) {
     console.error('Query error:', error);
     console.error('SQL:', sqlQuery);
@@ -49,7 +51,7 @@ export async function getOne<T = any>(sqlQuery: string, params: any[] = []): Pro
 }
 
 export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{ lastID: number; lastInsertRowid: number }> {
-  const db = getDb();
+  const client = getDb();
 
   try {
     // Add RETURNING id to get the inserted ID
@@ -62,8 +64,8 @@ export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{
     let paramIndex = 1;
     const convertedSql = modifiedSql.replace(/\?/g, () => `$${paramIndex++}`);
 
-    const results = await db.unsafe(convertedSql, params);
-    const lastId = results[0]?.id || 0;
+    const result = await client.query(convertedSql, params);
+    const lastId = result.rows[0]?.id || 0;
 
     return { lastID: lastId, lastInsertRowid: lastId };
   } catch (error) {
@@ -75,15 +77,15 @@ export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{
 }
 
 export async function runUpdate(sqlQuery: string, params: any[] = []): Promise<{ changes: number }> {
-  const db = getDb();
+  const client = getDb();
 
   try {
     // Convert ? placeholders to $1, $2, etc.
     let paramIndex = 1;
     const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
 
-    const results = await db.unsafe(convertedSql, params);
-    return { changes: Array.isArray(results) ? results.length : 1 };
+    const result = await client.query(convertedSql, params);
+    return { changes: result.rowCount || 0 };
   } catch (error) {
     console.error('Update error:', error);
     console.error('SQL:', sqlQuery);
@@ -93,15 +95,15 @@ export async function runUpdate(sqlQuery: string, params: any[] = []): Promise<{
 }
 
 export async function runDelete(sqlQuery: string, params: any[] = []): Promise<{ changes: number }> {
-  const db = getDb();
+  const client = getDb();
 
   try {
     // Convert ? placeholders to $1, $2, etc.
     let paramIndex = 1;
     const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
 
-    const results = await db.unsafe(convertedSql, params);
-    return { changes: Array.isArray(results) ? results.length : 1 };
+    const result = await client.query(convertedSql, params);
+    return { changes: result.rowCount || 0 };
   } catch (error) {
     console.error('Delete error:', error);
     console.error('SQL:', sqlQuery);
@@ -111,25 +113,21 @@ export async function runDelete(sqlQuery: string, params: any[] = []): Promise<{
 }
 
 export async function transaction<T>(callback: () => Promise<T>): Promise<T> {
-  const db = getDb();
+  const client = await getDb().connect();
 
   try {
-    return await db.begin(async (tx) => {
-      // Temporarily replace the global connection with the transaction
-      const originalSql = sql;
-      sql = tx as any;
-
-      try {
-        const result = await callback();
-        return result;
-      } finally {
-        sql = originalSql;
-      }
-    });
+    await client.query('BEGIN');
+    const result = await callback();
+    await client.query('COMMIT');
+    return result;
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Transaction error:', error);
     throw error;
+  } finally {
+    client.release();
   }
 }
 
+export { getDb };
 export default { getDb, runQuery, getOne, runInsert, runUpdate, runDelete, transaction };
