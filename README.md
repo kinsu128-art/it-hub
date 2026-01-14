@@ -56,6 +56,18 @@ npm run db:init
 - 기본 관리자 계정을 만듭니다 (admin / admin123)
 - 필요한 인덱스를 생성합니다
 
+### 테스트 데이터 로드 (선택사항)
+
+대시보드와 통계를 테스트하기 위해 샘플 데이터를 추가할 수 있습니다:
+
+```bash
+# 서버 테스트 데이터 5건 추가
+npm run db:seed:servers
+
+# 소프트웨어 테스트 데이터 10건 추가
+npm run db:seed:software
+```
+
 ### 개발 서버 실행
 
 ```bash

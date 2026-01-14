@@ -47,7 +47,8 @@
       "Bash(git commit:*)",
       "Bash(npm run build:*)",
       "Bash(curl:*)",
-      "Bash(node scripts/seed-servers.js:*)"
+      "Bash(node scripts/seed-servers.js:*)",
+      "Bash(node scripts/seed-software.js:*)"
     ]
   }
 }
