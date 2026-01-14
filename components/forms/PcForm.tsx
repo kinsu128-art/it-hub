@@ -13,6 +13,7 @@ interface PcFormProps {
 export default function PcForm({ pc, mode }: PcFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [searchingSpecs, setSearchingSpecs] = useState(false);
   const [formData, setFormData] = useState({
     asset_number: pc?.asset_number || '',
     user_name: pc?.user_name || '',
@@ -34,6 +35,46 @@ export default function PcForm({ pc, mode }: PcFormProps) {
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleModelNameBlur = async () => {
+    if (!formData.model_name.trim()) {
+      return;
+    }
+
+    // 이미 사양정보가 있으면 다시 검색하지 않음
+    if (formData.cpu || formData.ram || formData.disk) {
+      return;
+    }
+
+    setSearchingSpecs(true);
+
+    try {
+      const response = await fetch('/api/pc/search-specs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          modelName: formData.model_name,
+        }),
+      });
+
+      if (response.ok) {
+        const specs = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          cpu: specs.cpu || '',
+          ram: specs.ram || '',
+          disk: specs.disk || '',
+        }));
+      }
+    } catch (error) {
+      console.error('Error searching specs:', error);
+      // 에러가 발생해도 조용히 처리 (사용자 입력을 방해하지 않음)
+    } finally {
+      setSearchingSpecs(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,14 +132,17 @@ export default function PcForm({ pc, mode }: PcFormProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               모델명 <span className="text-red-500">*</span>
+              {searchingSpecs && <span className="text-blue-500 text-xs ml-2">검색 중...</span>}
             </label>
             <input
               type="text"
               name="model_name"
               value={formData.model_name}
               onChange={handleChange}
+              onBlur={handleModelNameBlur}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={searchingSpecs}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-wait"
             />
           </div>
 
