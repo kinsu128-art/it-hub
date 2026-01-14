@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IT-Hub - IT 자산 관리 시스템",
+  title: "디케이락(주) IT 자산관리",
   description: "전산실 통합 IT 인프라 관리 시스템",
 };
 
