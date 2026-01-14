@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { NetworkIp } from '@/types';
 import Button from '@/components/common/Button';
+import DisposeButton from '@/components/common/DisposeButton';
 import { getOne, runQuery } from '@/lib/db';
 
 async function getNetworkIp(id: string) {
@@ -49,6 +50,7 @@ export default async function NetworkDetailPage({ params }: { params: { id: stri
           <Link href={`/network/${params.id}/edit`}>
             <Button>수정</Button>
           </Link>
+          <DisposeButton assetType="network" assetId={ip.id} assetName={ip.ip_address} />
         </div>
       </div>
 

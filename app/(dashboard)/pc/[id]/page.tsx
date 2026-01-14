@@ -4,6 +4,7 @@ import { Pc } from '@/types';
 import Button from '@/components/common/Button';
 import { PC_STATUS, PC_STATUS_COLORS } from '@/lib/utils/constants';
 import { getOne, runQuery } from '@/lib/db';
+import DisposeButton from '@/components/common/DisposeButton';
 
 async function getPc(id: string) {
   try {
@@ -50,6 +51,7 @@ export default async function PcDetailPage({ params }: { params: { id: string } 
           <Link href={`/pc/${params.id}/edit`}>
             <Button>수정</Button>
           </Link>
+          <DisposeButton assetType="pc" assetId={pc.id} assetName={pc.model_name} />
         </div>
       </div>
 

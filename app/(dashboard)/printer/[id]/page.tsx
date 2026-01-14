@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Printer } from '@/types';
 import Button from '@/components/common/Button';
+import DisposeButton from '@/components/common/DisposeButton';
 import { PRINTER_STATUS, PRINTER_STATUS_COLORS } from '@/lib/utils/constants';
 import { getOne, runQuery } from '@/lib/db';
 
@@ -50,6 +51,7 @@ export default async function PrinterDetailPage({ params }: { params: { id: stri
           <Link href={`/printer/${params.id}/edit`}>
             <Button>수정</Button>
           </Link>
+          <DisposeButton assetType="printer" assetId={printer.id} assetName={printer.model_name} />
         </div>
       </div>
 

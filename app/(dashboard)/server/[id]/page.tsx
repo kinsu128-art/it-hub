@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Server } from '@/types';
 import Button from '@/components/common/Button';
+import DisposeButton from '@/components/common/DisposeButton';
 import { SERVER_STATUS, SERVER_STATUS_COLORS } from '@/lib/utils/constants';
 import { getOne, runQuery } from '@/lib/db';
 
@@ -50,6 +51,7 @@ export default async function ServerDetailPage({ params }: { params: { id: strin
           <Link href={`/server/${params.id}/edit`}>
             <Button>수정</Button>
           </Link>
+          <DisposeButton assetType="server" assetId={server.id} assetName={server.hostname} />
         </div>
       </div>
 

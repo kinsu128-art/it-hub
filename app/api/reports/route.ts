@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
       dateFilter = 'WHERE changed_at BETWEEN ? AND ?';
       params.push(startDate, endDate);
     } else if (period === 'week') {
-      dateFilter = "WHERE changed_at >= datetime('now', '-7 days')";
+      dateFilter = "WHERE changed_at >= NOW() - INTERVAL '7 days'";
     } else if (period === 'month') {
-      dateFilter = "WHERE changed_at >= datetime('now', '-30 days')";
+      dateFilter = "WHERE changed_at >= NOW() - INTERVAL '30 days'";
     }
 
     // Get asset counts by type

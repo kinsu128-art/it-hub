@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Software } from '@/types';
 import Button from '@/components/common/Button';
+import DisposeButton from '@/components/common/DisposeButton';
 import { SOFTWARE_STATUS, SOFTWARE_STATUS_COLORS } from '@/lib/utils/constants';
 import { format } from 'date-fns';
 import { getOne, runQuery } from '@/lib/db';
@@ -60,6 +61,7 @@ export default async function SoftwareDetailPage({ params }: { params: { id: str
           <Link href={`/software/${params.id}/edit`}>
             <Button>수정</Button>
           </Link>
+          <DisposeButton assetType="software" assetId={software.id} assetName={software.software_name} />
         </div>
       </div>
 
