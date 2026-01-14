@@ -1,5 +1,6 @@
 export type AssetStatus = 'assigned' | 'in_stock' | 'repair' | 'disposed';
 export type ServerStatus = 'active' | 'inactive' | 'maintenance' | 'disposed';
+export type PrinterStatus = 'active' | 'inactive' | 'repair' | 'disposed';
 export type SoftwareStatus = 'active' | 'expired' | 'disposed';
 
 export interface Pc {
@@ -66,7 +67,7 @@ export interface Printer {
   drum_status?: string;
   vendor_name?: string;
   vendor_contact?: string;
-  status: AssetStatus;
+  status: PrinterStatus;
   notes?: string;
   created_at: string;
   updated_at: string;

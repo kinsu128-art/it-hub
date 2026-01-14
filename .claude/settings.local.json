@@ -19,7 +19,9 @@
       "mcp__playwright__browser_close",
       "mcp__github__create_repository",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: IT-Hub - 전산실 통합 IT 인프라 관리 시스템\n\nfeat: Next.js 14 기반 IT 자산 관리 애플리케이션\n- PC/노트북, 서버, 네트워크 IP, 프린터, 소프트웨어 관리\n- SQLite \\(sql.js\\) 데이터베이스\n- 완전한 CRUD 기능 및 변경 이력 추적\n- 인증 시스템 \\(iron-session\\)\n- 대시보드 및 보고서 기능\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npx tsc:*)"
     ]
   }
 }

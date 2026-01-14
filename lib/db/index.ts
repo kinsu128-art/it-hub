@@ -23,22 +23,27 @@ async function initDatabase(): Promise<SqlJsDatabase> {
     );
 
     SQL = await initSqlJs({
-      wasmBinary,
+      wasmBinary: wasmBinary.buffer.slice(
+        wasmBinary.byteOffset,
+        wasmBinary.byteOffset + wasmBinary.byteLength
+      ) as ArrayBuffer,
     });
   }
 
   // Load existing database or create new one
+  let database: SqlJsDatabase;
   if (fs.existsSync(dbPath)) {
     const buffer = fs.readFileSync(dbPath);
-    db = new SQL.Database(buffer);
+    database = new SQL.Database(buffer);
   } else {
-    db = new SQL.Database();
+    database = new SQL.Database();
   }
 
   // Enable foreign keys
-  db.run('PRAGMA foreign_keys = ON');
+  database.run('PRAGMA foreign_keys = ON');
 
-  return db;
+  db = database;
+  return database;
 }
 
 async function saveDatabase() {
@@ -80,9 +85,9 @@ export async function runQuery<T = any>(sql: string, params: any[] = []): Promis
   }
 }
 
-export async function getOne<T = any>(sql: string, params: any[] = []): Promise<T | undefined> {
+export async function getOne<T = any>(sql: string, params: any[] = []): Promise<T | null> {
   const results = await runQuery<T>(sql, params);
-  return results[0];
+  return results[0] || null;
 }
 
 export async function runInsert(sql: string, params: any[] = []): Promise<{ lastID: number; lastInsertRowid: number }> {
