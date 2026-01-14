@@ -76,10 +76,19 @@ export async function POST(request: NextRequest) {
     });
 
     if (!openRouterResponse.ok) {
-      const errorData = await openRouterResponse.json();
-      console.error('OpenRouter API error:', errorData);
+      let errorData;
+      try {
+        errorData = await openRouterResponse.json();
+      } catch (e) {
+        errorData = await openRouterResponse.text();
+      }
+      console.error('OpenRouter API error:', {
+        status: openRouterResponse.status,
+        statusText: openRouterResponse.statusText,
+        error: errorData
+      });
       return NextResponse.json(
-        { success: false, error: 'AI 분석 중 오류가 발생했습니다.' },
+        { success: false, error: `AI 분석 중 오류가 발생했습니다. (${openRouterResponse.status}: ${openRouterResponse.statusText})` },
         { status: 500 }
       );
     }
