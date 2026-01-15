@@ -48,6 +48,7 @@ export default function PcForm({ pc, mode }: PcFormProps) {
     }
 
     setSearchingSpecs(true);
+    alert(`"${formData.model_name}"의 사양정보를 검색하고 있습니다...`);
 
     try {
       const response = await fetch('/api/pc/search-specs', {
@@ -68,10 +69,13 @@ export default function PcForm({ pc, mode }: PcFormProps) {
           ram: specs.ram || '',
           disk: specs.disk || '',
         }));
+        alert('사양정보를 자동으로 입력했습니다.');
+      } else {
+        alert('사양정보 검색에 실패했습니다. 수동으로 입력해주세요.');
       }
     } catch (error) {
       console.error('Error searching specs:', error);
-      // 에러가 발생해도 조용히 처리 (사용자 입력을 방해하지 않음)
+      alert('사양정보 검색 중 오류가 발생했습니다. 수동으로 입력해주세요.');
     } finally {
       setSearchingSpecs(false);
     }
