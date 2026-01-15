@@ -177,6 +177,11 @@ export default function ReportsPage() {
     changes: item.count,
   }));
 
+  const assetTypeChangesSummary = reportData.changes.byAssetType.map((item: any) => ({
+    name: ASSET_TYPE_LABELS[item.asset_type] || item.asset_type,
+    count: item.count,
+  }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -261,6 +266,26 @@ export default function ReportsPage() {
           </ResponsiveContainer>
         </div>
 
+        {/* PC Operating Year Statistics */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">PC/노트북 도입 연차별 현황</h3>
+          {reportData.pcByYear && reportData.pcByYear.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={reportData.pcByYear}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" name="대수" fill="#8B5CF6" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              도입 연차 데이터가 없습니다.
+            </div>
+          )}
+        </div>
+
         {/* Changes by Action */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-medium text-gray-900 mb-4">작업 유형별 변동</h3>
@@ -322,6 +347,25 @@ export default function ReportsPage() {
               <Line type="monotone" dataKey="changes" name="변동 건수" stroke="#3B82F6" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Asset Type Changes Summary */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">최근 기간 자산 유형별 변동 요약</h3>
+          <div className="space-y-2">
+            {assetTypeChangesSummary.length > 0 ? (
+              assetTypeChangesSummary.map((item: any) => (
+                <div key={item.name} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                  <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                  <span className="text-lg font-bold text-blue-600">{item.count}</span>
+                </div>
+              ))
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-gray-500">
+                변동 사항이 없습니다.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -222,6 +222,31 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
+        {/* PC Operating Year Statistics */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            PC/노트북 도입 연차별 현황
+          </h3>
+          {dashboardData.pcByYear && dashboardData.pcByYear.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dashboardData.pcByYear}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" name="대수" fill="#8B5CF6" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              도입 연차 데이터가 없습니다.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Changes Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Changes Distribution */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -257,6 +282,31 @@ export default function DashboardPage() {
               최근 변동사항이 없습니다.
             </div>
           )}
+        </div>
+
+        {/* Recent Changes Statistics */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            최근 7일 변동 요약
+          </h3>
+          <div className="space-y-3">
+            {dashboardData.changes.byAssetType.length > 0 ? (
+              <div className="space-y-2">
+                {dashboardData.changes.byAssetType.map((item: any) => (
+                  <div key={item.asset_type} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span className="text-sm font-medium text-gray-700">
+                      {ASSET_TYPE_LABELS[item.asset_type] || item.asset_type}
+                    </span>
+                    <span className="text-lg font-bold text-blue-600">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-gray-500">
+                최근 7일 변동 사항이 없습니다.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

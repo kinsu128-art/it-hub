@@ -122,6 +122,17 @@ export async function GET(request: NextRequest) {
       params
     );
 
+    // Get PC statistics by year of purchase (operating year)
+    const pcByYear = await runQuery<{ year: number; count: number }>(
+      `SELECT
+        EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM purchase_date)::INT as year,
+        COUNT(*) as count
+       FROM pcs
+       WHERE purchase_date IS NOT NULL
+       GROUP BY EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM purchase_date)::INT
+       ORDER BY year ASC`
+    );
+
     // Helper to convert bigint to number
     const convertToNumber = (val: any) => {
       if (val === null || val === undefined) return 0;
@@ -134,6 +145,32 @@ export async function GET(request: NextRequest) {
     const printerData = printerCount[0] ? { total: convertToNumber(printerCount[0].total), active: convertToNumber(printerCount[0].active) } : { total: 0, active: 0 };
     const networkData = networkCount[0] ? { total: convertToNumber(networkCount[0].total), active: convertToNumber(networkCount[0].active) } : { total: 0, active: 0 };
     const softwareData = softwareCount[0] ? { total: convertToNumber(softwareCount[0].total), active: convertToNumber(softwareCount[0].active) } : { total: 0, active: 0 };
+
+    // Process PC year statistics - merge 6+ years into one group
+    const pcYearStats = pcByYear.map((item: any) => ({
+      year: convertToNumber(item.year),
+      count: convertToNumber(item.count),
+    })).sort((a, b) => a.year - b.year);
+
+    const processPcYears = (stats: any[]): any[] => {
+      const result: any[] = [];
+      for (const stat of stats) {
+        if (stat.year >= 6) {
+          // Merge 6+ years
+          const existing = result.find(r => r.year === '6+');
+          if (existing) {
+            existing.count += stat.count;
+          } else {
+            result.push({ year: '6+', count: stat.count });
+          }
+        } else {
+          result.push({ year: `${stat.year}년`, count: stat.count });
+        }
+      }
+      return result;
+    };
+
+    const pcYearData = processPcYears(pcYearStats);
 
     return NextResponse.json({
       success: true,
@@ -150,6 +187,7 @@ export async function GET(request: NextRequest) {
           server: serverByStatus,
           printer: printerByStatus,
         },
+        pcByYear: pcYearData,
         changes: {
           history: changeHistory,
           byAction: changesByAction,
@@ -181,6 +219,7 @@ export async function GET(request: NextRequest) {
           server: [],
           printer: [],
         },
+        pcByYear: [],
         changes: {
           history: [],
           byAction: [],
