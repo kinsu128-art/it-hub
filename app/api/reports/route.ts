@@ -172,6 +172,22 @@ export async function GET(request: NextRequest) {
 
     const pcYearData = processPcYears(pcYearStats);
 
+    // Convert count values to numbers for changes data
+    const changesByActionData = changesByAction.map((item: any) => ({
+      action: item.action,
+      count: convertToNumber(item.count),
+    }));
+
+    const changesByAssetTypeData = changesByAssetType.map((item: any) => ({
+      asset_type: item.asset_type,
+      count: convertToNumber(item.count),
+    }));
+
+    const dailyChangesData = dailyChanges.map((item: any) => ({
+      date: item.date,
+      count: convertToNumber(item.count),
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
@@ -190,9 +206,9 @@ export async function GET(request: NextRequest) {
         pcByYear: pcYearData,
         changes: {
           history: changeHistory,
-          byAction: changesByAction,
-          byAssetType: changesByAssetType,
-          daily: dailyChanges,
+          byAction: changesByActionData,
+          byAssetType: changesByAssetTypeData,
+          daily: dailyChangesData,
         },
         period: {
           type: period,
