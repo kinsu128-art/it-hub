@@ -22,48 +22,39 @@ export async function recordHistory(params: RecordHistoryParams) {
       [assetType, assetId, action, userId, ipAddress || null, userAgent || null]
     );
   } else if (action === 'update' && changes) {
-    // Multiple records for each changed field
-    const db = await getDb();
-    const client = await db.connect();
+    // Multiple records for each changed field - use transaction
+    const { transaction, getDb } = await import('./index');
 
-    try {
-      await client.query('BEGIN TRANSACTION');
+    await transaction(async (tx) => {
       for (const change of changes) {
-        await client.query(
+        const request = tx.request();
+        request.input('assetType', assetType);
+        request.input('assetId', assetId);
+        request.input('action', action);
+        request.input('fieldName', change.field);
+        request.input('oldValue', JSON.stringify(change.oldValue));
+        request.input('newValue', JSON.stringify(change.newValue));
+        request.input('userId', userId);
+        request.input('ipAddress', ipAddress || null);
+        request.input('userAgent', userAgent || null);
+
+        await request.query(
           `INSERT INTO asset_history
            (asset_type, asset_id, action, field_name, old_value, new_value, changed_by, ip_address, user_agent)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [
-            assetType,
-            assetId,
-            action,
-            change.field,
-            JSON.stringify(change.oldValue),
-            JSON.stringify(change.newValue),
-            userId,
-            ipAddress || null,
-            userAgent || null,
-          ]
+           VALUES (@assetType, @assetId, @action, @fieldName, @oldValue, @newValue, @userId, @ipAddress, @userAgent)`
         );
       }
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   }
 }
 
 export async function getAssetHistory(assetType: string, assetId: number, limit = 50) {
   return runQuery(
-    `SELECT h.*, u.name as changed_by_name
+    `SELECT TOP ${limit} h.*, u.name as changed_by_name
      FROM asset_history h
      LEFT JOIN users u ON h.changed_by = u.id
      WHERE h.asset_type = ? AND h.asset_id = ?
-     ORDER BY h.changed_at DESC
-     LIMIT ?`,
-    [assetType, assetId, limit]
+     ORDER BY h.changed_at DESC`,
+    [assetType, assetId]
   );
 }

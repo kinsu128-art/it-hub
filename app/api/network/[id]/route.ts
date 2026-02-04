@@ -25,12 +25,11 @@ export async function GET(
 
     // Get history
     const history = await runQuery(
-      `SELECT h.*, u.name as changed_by_name
+      `SELECT TOP 50 h.*, u.name as changed_by_name
        FROM asset_history h
        LEFT JOIN users u ON h.changed_by = u.id
        WHERE h.asset_type = 'network' AND h.asset_id = ?
-       ORDER BY h.changed_at DESC
-       LIMIT 50`,
+       ORDER BY h.changed_at DESC`,
       [params.id]
     );
 

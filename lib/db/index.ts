@@ -1,42 +1,67 @@
-import { Pool } from 'pg';
+import sql from 'mssql';
 
-const connectionString = process.env.DATABASE_URL || '';
+// MSSQL Connection Configuration
+const config: sql.config = {
+  server: process.env.DB_SERVER || '192.168.1.11',
+  port: parseInt(process.env.DB_PORT || '2433'),
+  database: process.env.DB_DATABASE || 'dk_it',
+  user: process.env.DB_USER || 'dkenterb',
+  password: process.env.DB_PASSWORD || 'Micro@4580',
+  options: {
+    encrypt: false, // Use false for local network
+    trustServerCertificate: true,
+    enableArithAbort: true,
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000,
+  },
+};
 
-if (!connectionString || connectionString.includes('[YOUR-PASSWORD]')) {
+// Validate configuration
+if (!config.server || !config.database || !config.user || !config.password) {
   console.warn(
-    '\n⚠️  DATABASE_URL is not configured!\n' +
-    'Please update .env.local with your Supabase database password.\n' +
-    'Get it from: https://supabase.com/dashboard/project/sapzbrueaipnbbazsvcl/settings/database\n'
+    '\n⚠️  Database configuration is incomplete!\n' +
+    'Please ensure all DB_* environment variables are set in .env.local\n' +
+    'Required: DB_SERVER, DB_PORT, DB_DATABASE, DB_USER, DB_PASSWORD\n'
   );
 }
 
 // Create a connection pool
-let pool: Pool | null = null;
+let pool: sql.ConnectionPool | null = null;
 
-function getDb(): Pool {
+async function getDb(): Promise<sql.ConnectionPool> {
   if (!pool) {
-    pool = new Pool({
-      connectionString,
-      max: 10,
-      idleTimeoutMillis: 20000,
-      connectionTimeoutMillis: 10000,
-      ssl: { rejectUnauthorized: false }
-    });
+    pool = new sql.ConnectionPool(config);
+    await pool.connect();
+    console.log('✅ Connected to MSSQL Server');
   }
   return pool;
 }
 
+// Helper function to convert ? placeholders to MSSQL @param syntax
+function convertPlaceholders(sqlQuery: string, params: any[]): { query: string; params: any[] } {
+  let paramIndex = 1;
+  const convertedQuery = sqlQuery.replace(/\?/g, () => `@param${paramIndex++}`);
+  return { query: convertedQuery, params };
+}
+
 // Helper functions
 export async function runQuery<T = any>(sqlQuery: string, params: any[] = []): Promise<T[]> {
-  const client = getDb();
-
   try {
-    // Convert ? placeholders to $1, $2, etc. for postgres
-    let paramIndex = 1;
-    const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
+    const pool = await getDb();
+    const { query, params: convertedParams } = convertPlaceholders(sqlQuery, params);
 
-    const result = await client.query(convertedSql, params);
-    return result.rows as T[];
+    const request = pool.request();
+
+    // Add parameters to request
+    convertedParams.forEach((param, index) => {
+      request.input(`param${index + 1}`, param);
+    });
+
+    const result = await request.query(query);
+    return result.recordset as T[];
   } catch (error) {
     console.error('Query error:', error);
     console.error('SQL:', sqlQuery);
@@ -51,21 +76,31 @@ export async function getOne<T = any>(sqlQuery: string, params: any[] = []): Pro
 }
 
 export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{ lastID: number; lastInsertRowid: number }> {
-  const client = getDb();
-
   try {
-    // Add RETURNING id to get the inserted ID
-    let modifiedSql = sqlQuery.trim();
-    if (!modifiedSql.toLowerCase().includes('returning')) {
-      modifiedSql += ' RETURNING id';
+    const pool = await getDb();
+
+    // Remove RETURNING clause if exists (PostgreSQL-specific)
+    let cleanedSql = sqlQuery.replace(/RETURNING\s+\w+/gi, '').trim();
+
+    // Add OUTPUT INSERTED.id for MSSQL to get the last inserted ID
+    if (!cleanedSql.toUpperCase().includes('OUTPUT')) {
+      cleanedSql = cleanedSql.replace(
+        /INSERT\s+INTO\s+(\w+)\s*\(/i,
+        'INSERT INTO $1 OUTPUT INSERTED.id ('
+      );
     }
 
-    // Convert ? placeholders to $1, $2, etc.
-    let paramIndex = 1;
-    const convertedSql = modifiedSql.replace(/\?/g, () => `$${paramIndex++}`);
+    const { query, params: convertedParams } = convertPlaceholders(cleanedSql, params);
 
-    const result = await client.query(convertedSql, params);
-    const lastId = result.rows[0]?.id || 0;
+    const request = pool.request();
+
+    // Add parameters
+    convertedParams.forEach((param, index) => {
+      request.input(`param${index + 1}`, param);
+    });
+
+    const result = await request.query(query);
+    const lastId = result.recordset && result.recordset[0] ? result.recordset[0].id : 0;
 
     return { lastID: lastId, lastInsertRowid: lastId };
   } catch (error) {
@@ -77,15 +112,19 @@ export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{
 }
 
 export async function runUpdate(sqlQuery: string, params: any[] = []): Promise<{ changes: number }> {
-  const client = getDb();
-
   try {
-    // Convert ? placeholders to $1, $2, etc.
-    let paramIndex = 1;
-    const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
+    const pool = await getDb();
+    const { query, params: convertedParams } = convertPlaceholders(sqlQuery, params);
 
-    const result = await client.query(convertedSql, params);
-    return { changes: result.rowCount || 0 };
+    const request = pool.request();
+
+    // Add parameters
+    convertedParams.forEach((param, index) => {
+      request.input(`param${index + 1}`, param);
+    });
+
+    const result = await request.query(query);
+    return { changes: result.rowsAffected[0] || 0 };
   } catch (error) {
     console.error('Update error:', error);
     console.error('SQL:', sqlQuery);
@@ -95,15 +134,19 @@ export async function runUpdate(sqlQuery: string, params: any[] = []): Promise<{
 }
 
 export async function runDelete(sqlQuery: string, params: any[] = []): Promise<{ changes: number }> {
-  const client = getDb();
-
   try {
-    // Convert ? placeholders to $1, $2, etc.
-    let paramIndex = 1;
-    const convertedSql = sqlQuery.replace(/\?/g, () => `$${paramIndex++}`);
+    const pool = await getDb();
+    const { query, params: convertedParams } = convertPlaceholders(sqlQuery, params);
 
-    const result = await client.query(convertedSql, params);
-    return { changes: result.rowCount || 0 };
+    const request = pool.request();
+
+    // Add parameters
+    convertedParams.forEach((param, index) => {
+      request.input(`param${index + 1}`, param);
+    });
+
+    const result = await request.query(query);
+    return { changes: result.rowsAffected[0] || 0 };
   } catch (error) {
     console.error('Delete error:', error);
     console.error('SQL:', sqlQuery);
@@ -112,20 +155,19 @@ export async function runDelete(sqlQuery: string, params: any[] = []): Promise<{
   }
 }
 
-export async function transaction<T>(callback: () => Promise<T>): Promise<T> {
-  const client = await getDb().connect();
+export async function transaction<T>(callback: (transaction: sql.Transaction) => Promise<T>): Promise<T> {
+  const pool = await getDb();
+  const transaction = new sql.Transaction(pool);
 
   try {
-    await client.query('BEGIN');
-    const result = await callback();
-    await client.query('COMMIT');
+    await transaction.begin();
+    const result = await callback(transaction);
+    await transaction.commit();
     return result;
   } catch (error) {
-    await client.query('ROLLBACK');
+    await transaction.rollback();
     console.error('Transaction error:', error);
     throw error;
-  } finally {
-    client.release();
   }
 }
 

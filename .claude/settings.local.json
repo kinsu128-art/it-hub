@@ -48,7 +48,16 @@
       "Bash(npm run build:*)",
       "Bash(curl:*)",
       "Bash(node scripts/seed-servers.js:*)",
-      "Bash(node scripts/seed-software.js:*)"
+      "Bash(node scripts/seed-software.js:*)",
+      "Bash(git remote add:*)",
+      "Bash(git pull:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(npm install)",
+      "Bash(timeout 10 tail:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker compose:*)",
+      "Bash(powershell.exe -Command \"docker --version\")"
     ]
   }
 }
