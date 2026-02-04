@@ -3,6 +3,17 @@ import type { NextRequest } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { SessionData } from './types';
 
+const sessionConfig = {
+  password: process.env.SESSION_SECRET!,
+  cookieName: 'ithub-session',
+  cookieOptions: {
+    secure: process.env.NODE_ENV === 'production' && process.env.HTTPS === 'true',
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    maxAge: 60 * 60 * 24 * 7,
+  },
+};
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
@@ -16,15 +27,7 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname.startsWith('/reports')) {
 
     try {
-      const session = await getIronSession<SessionData>(request, response, {
-        password: process.env.SESSION_SECRET!,
-        cookieName: 'ithub-session',
-        cookieOptions: {
-          secure: process.env.NODE_ENV === 'production',
-          httpOnly: true,
-          maxAge: 60 * 60 * 24 * 7,
-        },
-      });
+      const session = await getIronSession<SessionData>(request, response, sessionConfig);
 
       if (!session.isLoggedIn) {
         return NextResponse.redirect(new URL('/login', request.url));
@@ -37,15 +40,7 @@ export async function middleware(request: NextRequest) {
   // Redirect to dashboard if already logged in and trying to access login
   if (request.nextUrl.pathname === '/login') {
     try {
-      const session = await getIronSession<SessionData>(request, response, {
-        password: process.env.SESSION_SECRET!,
-        cookieName: 'ithub-session',
-        cookieOptions: {
-          secure: process.env.NODE_ENV === 'production',
-          httpOnly: true,
-          maxAge: 60 * 60 * 24 * 7,
-        },
-      });
+      const session = await getIronSession<SessionData>(request, response, sessionConfig);
 
       if (session.isLoggedIn) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
