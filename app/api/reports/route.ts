@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
       dateFilter = 'WHERE changed_at BETWEEN ? AND ?';
       params.push(startDate, endDate);
     } else if (period === 'week') {
-      dateFilter = "WHERE changed_at >= NOW() - INTERVAL '7 days'";
+      dateFilter = "WHERE changed_at >= DATEADD(DAY, -7, GETDATE())";
     } else if (period === 'month') {
-      dateFilter = "WHERE changed_at >= NOW() - INTERVAL '30 days'";
+      dateFilter = "WHERE changed_at >= DATEADD(DAY, -30, GETDATE())";
     }
 
     // Get asset counts by type
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     const networkCount = await runQuery<{ total: string | number; active: string | number }>(
       `SELECT
         COUNT(*) as total,
-        COALESCE(SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END), 0) as active
+        COALESCE(SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END), 0) as active
        FROM network_ips`
     );
 
@@ -81,14 +81,13 @@ export async function GET(request: NextRequest) {
 
     // Get change history for the period
     const changeHistory = await runQuery(
-      `SELECT
+      `SELECT TOP 100
         h.*,
         u.name as changed_by_name
        FROM asset_history h
        LEFT JOIN users u ON h.changed_by = u.id
        ${dateFilter}
-       ORDER BY h.changed_at DESC
-       LIMIT 100`,
+       ORDER BY h.changed_at DESC`,
       params
     );
 
@@ -113,11 +112,11 @@ export async function GET(request: NextRequest) {
     // Get daily change counts (for charts)
     const dailyChanges = await runQuery<{ date: string; count: number }>(
       `SELECT
-        DATE(changed_at) as date,
+        CAST(changed_at AS DATE) as date,
         COUNT(*) as count
        FROM asset_history
        ${dateFilter}
-       GROUP BY DATE(changed_at)
+       GROUP BY CAST(changed_at AS DATE)
        ORDER BY date ASC`,
       params
     );
@@ -125,11 +124,11 @@ export async function GET(request: NextRequest) {
     // Get PC statistics by year of purchase (operating year)
     const pcByYear = await runQuery<{ year: number; count: number }>(
       `SELECT
-        EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM purchase_date)::INT as year,
+        YEAR(GETDATE()) - YEAR(purchase_date) as year,
         COUNT(*) as count
        FROM pcs
        WHERE purchase_date IS NOT NULL
-       GROUP BY EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM purchase_date)::INT
+       GROUP BY YEAR(GETDATE()) - YEAR(purchase_date)
        ORDER BY year ASC`
     );
 

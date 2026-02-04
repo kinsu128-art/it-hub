@@ -1,14 +1,14 @@
 /**
  * Database Schema Documentation
  *
- * This application now uses Supabase PostgreSQL instead of SQLite.
- * The database schema has been migrated to Supabase.
+ * This application uses MSSQL (Microsoft SQL Server) for data persistence.
+ * The database server is hosted externally at 192.168.1.11:2433
  *
  * To set up the database:
- * 1. The schema is already created in Supabase (migration: initial_schema)
- * 2. Get your database password from: https://supabase.com/dashboard/project/sapzbrueaipnbbazsvcl/settings/database
- * 3. Update DATABASE_URL in .env.local with your password
- * 4. Run the initialization script to create the default admin user
+ * 1. Ensure MSSQL server is accessible at 192.168.1.11:2433
+ * 2. Database name: dk_it
+ * 3. The schema should be created using scripts/init-db-mssql.sql
+ * 4. Update DB_* environment variables in .env.local
  *
  * Database Tables:
  * - users: User accounts with roles (admin/user/viewer)
@@ -19,7 +19,7 @@
  * - software: Software licenses
  * - asset_history: Audit log for all asset changes
  *
- * For more details, see: https://supabase.com/dashboard/project/sapzbrueaipnbbazsvcl
+ * For more details, see: scripts/init-db-mssql.sql
  */
 
 import { runQuery, runInsert } from './index';
@@ -29,7 +29,7 @@ export async function initializeDatabase() {
   try {
     // Check if admin user already exists
     const existingAdmin = await runQuery(
-      'SELECT id FROM users WHERE username = $1',
+      'SELECT id FROM users WHERE username = ?',
       [process.env.ADMIN_USERNAME || 'admin']
     );
 
@@ -44,7 +44,7 @@ export async function initializeDatabase() {
 
     await runInsert(
       `INSERT INTO users (username, password_hash, name, email, role)
-       VALUES ($1, $2, $3, $4, $5)`,
+       VALUES (?, ?, ?, ?, ?)`,
       [
         process.env.ADMIN_USERNAME || 'admin',
         hashedPassword,
