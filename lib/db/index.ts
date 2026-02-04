@@ -92,6 +92,10 @@ export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{
 
     const { query, params: convertedParams } = convertPlaceholders(cleanedSql, params);
 
+    // Debug logging
+    console.log('🔍 SQL Query:', query);
+    console.log('🔍 Params:', convertedParams);
+
     const request = pool.request();
 
     // Add parameters
@@ -105,7 +109,7 @@ export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{
     return { lastID: lastId, lastInsertRowid: lastId };
   } catch (error) {
     console.error('Insert error:', error);
-    console.error('SQL:', sqlQuery);
+    console.error('Original SQL:', sqlQuery);
     console.error('Params:', params);
     throw error;
   }

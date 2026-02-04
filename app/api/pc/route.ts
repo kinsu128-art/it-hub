@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert PC
+    // Insert PC (created_at and updated_at are auto-generated)
     const result = await runInsert(
       `INSERT INTO pcs (
         asset_number, user_name, department, model_name, serial_number,
