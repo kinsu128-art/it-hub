@@ -83,10 +83,12 @@ export async function runInsert(sqlQuery: string, params: any[] = []): Promise<{
     let cleanedSql = sqlQuery.replace(/RETURNING\s+\w+/gi, '').trim();
 
     // Add OUTPUT INSERTED.id for MSSQL to get the last inserted ID
+    // Correct MSSQL syntax: INSERT INTO table (cols) OUTPUT INSERTED.id VALUES (...)
     if (!cleanedSql.toUpperCase().includes('OUTPUT')) {
+      // Match: INSERT INTO table_name (column_list) VALUES
       cleanedSql = cleanedSql.replace(
-        /INSERT\s+INTO\s+(\w+)\s*\(/i,
-        'INSERT INTO $1 OUTPUT INSERTED.id ('
+        /INSERT\s+INTO\s+(\w+)\s*\(([\s\S]*?)\)\s*VALUES/i,
+        'INSERT INTO $1 ($2) OUTPUT INSERTED.id VALUES'
       );
     }
 
