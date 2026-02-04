@@ -40,10 +40,10 @@ export async function GET(request: NextRequest) {
     );
     const total = countResult[0]?.count || 0;
 
-    // Get paginated data
+    // Get paginated data (MSSQL uses OFFSET-FETCH instead of LIMIT-OFFSET)
     const printers = await runQuery<Printer>(
-      `SELECT * FROM printers ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      `SELECT * FROM printers ${whereClause} ORDER BY created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`,
+      [...params, offset, limit]
     );
 
     return NextResponse.json({
