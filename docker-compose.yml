@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: ithub-app
     ports:
-      - "8090:3000"
+      - "8090:3030"
     environment:
       # MSSQL Connection (External Server)
       DB_SERVER: ${DB_SERVER:-192.168.1.11}
@@ -23,7 +23,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10}
       PAGE_SIZE: ${PAGE_SIZE:-20}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:8090}
       NODE_ENV: production
     networks:
       - ithub-network

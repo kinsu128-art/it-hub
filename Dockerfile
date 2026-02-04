@@ -45,11 +45,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Switch to non-root user
 USER nextjs
 
-# Expose port 3000
-EXPOSE 3000
+# Expose port 3030
+EXPOSE 3030
 
 # Set environment variables
-ENV PORT 3000
+ENV PORT 3030
 ENV HOSTNAME "0.0.0.0"
 
 # Start the application

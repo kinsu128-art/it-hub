@@ -37,7 +37,7 @@ async function fixAdminPassword() {
     console.log('📋 Login credentials:');
     console.log('   Username: admin');
     console.log('   Password: admin123');
-    console.log('\n🌐 You can now login at: http://localhost:3000/login');
+    console.log('\n🌐 You can now login at: http://localhost:8090/login');
 
     await pool.close();
     process.exit(0);
