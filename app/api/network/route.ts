@@ -41,10 +41,15 @@ export async function GET(request: NextRequest) {
     );
     const total = countResult[0]?.count || 0;
 
-    // Get paginated data (MSSQL uses OFFSET-FETCH instead of LIMIT-OFFSET)
+    // Get paginated data using ROW_NUMBER() for MSSQL compatibility
     const ips = await runQuery<NetworkIp>(
-      `SELECT * FROM network_ips ${whereClause} ORDER BY ip_address OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`,
-      [...params, offset, limit]
+      `WITH PaginatedData AS (
+        SELECT *, ROW_NUMBER() OVER (ORDER BY ip_address) AS RowNum
+        FROM network_ips ${whereClause}
+      )
+      SELECT * FROM PaginatedData
+      WHERE RowNum BETWEEN ? AND ?`,
+      [...params, offset + 1, offset + limit]
     );
 
     return NextResponse.json({

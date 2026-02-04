@@ -44,12 +44,15 @@ export async function GET(request: NextRequest) {
     );
     const total = countResult[0]?.count || 0;
 
-    // 목록 조회 (MSSQL uses OFFSET-FETCH instead of LIMIT-OFFSET)
+    // 목록 조회 using ROW_NUMBER() for MSSQL compatibility
     const software = await runQuery(
-      `SELECT * FROM software ${whereClause}
-       ORDER BY created_at DESC
-       OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`,
-      [...params, offset, limit]
+      `WITH PaginatedData AS (
+        SELECT *, ROW_NUMBER() OVER (ORDER BY created_at DESC) AS RowNum
+        FROM software ${whereClause}
+      )
+      SELECT * FROM PaginatedData
+      WHERE RowNum BETWEEN ? AND ?`,
+      [...params, offset + 1, offset + limit]
     );
 
     return NextResponse.json({
